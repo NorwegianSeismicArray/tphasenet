@@ -1,0 +1,7 @@
+#  conda create -n tphasenet python=3.10.12
+#  conda activate tphasenet
+tensorflow
+tqdm
+pandas
+scipy
+omegaconf

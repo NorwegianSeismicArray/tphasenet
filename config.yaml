@@ -1,0 +1,55 @@
+run:
+  project: 'minem_arraydetect'
+  #project: 'phasedetection'
+  experiment_name: ''
+  outputdir: '/projects/Array/MINEM_ArrayProcessing/TASK1_PhaseDetection/'
+  code_location: '/vcs/andreask/tphasenet'
+data:
+  input_dataset_name: '1statdetect' # dataset name from ML data generator
+  input_datatype: 'single_station_waveforms'
+  inputdir: '/projects/Array/ML_DataSet/data/' # where data are saved
+  #train_years: [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]
+  train_years: [1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]
+  valid_years: [2021]
+  test_years: [2022]
+  #test_years: [2022,2023]
+  sampling_rate : 40 # common waveform sampling rate - see data generation
+  allowed_phases : ['PN', 'PG', 'P', 'SN', 'SG', 'S', 'PB', 'SB','D'] #  phase types to be used as labels
+training:
+  reduce_lr_patience: 9
+  early_stopping_patience: 15
+  epochs: 200
+  batch_size: 32
+  weight_decay: 0.1
+  learning_rate: 0.001
+  class_weights: [0.05,0.40,0.55] # noise, P, S
+  optimizer: 'adam'
+  l1_norm: 0.0
+  l2_norm: 0.0
+  dropout: 0.4
+  probabilistic: False,
+  probabilistic_samples: 10,
+normalization:
+  mode: 'std'
+  channel_mode: 'global'
+augment:
+  ramp: 11
+  add_noise: 0.3
+  add_event: 0.3
+  drop_channel: 0.2
+  add_gap:  0.2
+  max_gap_size: 0.1
+  new_size: 300
+  taper: 0.01
+model:
+  type: 'transphasenet'
+  residual_attention: [0,0,0,8,16,32,64]
+  filters: [64,64,128,128,256,256,512]
+  kernel_sizes: [7,7,7,7,7,7,7]
+  pooling_type: 'max'
+  activation: 'swish'
+  att_type: 'across'
+  rnn_type: 'lstm'
+  additive_att: False
+  loss_weights: [0.05,0.4,0.55,1.0] #Only used by EQT
+  probabilistic: False
