@@ -29,7 +29,7 @@ the dummy training data files. We plan to make a larger dataset available.
 
 The models used in the paper are also too large for GitHub and will be provided here soon:
 
-[Zenodo repository](10.5281/zenodo.11231543)
+[Zenodo repository](https://www.doi.org/10.5281/zenodo.11231543)
 
 To pick arrivals in continuous data of station ARA0 first download the models, store tjem in tf/output/models,
 adjust pred_config.yaml, and then run:
