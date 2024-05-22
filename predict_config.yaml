@@ -1,6 +1,5 @@
 model: 'config.yaml'
-#modelname : 'tf/output/models/saved_model_arces_nores_spits_fines_norsar_helsinki_leb'
-modelname : '/projects/Array/ML_methods/output/models/saved_model_arces_nores_spits_fines_norsar_helsinki_leb'
+modelname : 'tf/output/models/saved_model_arces_nores_spits_fines_norsar_helsinki_leb'
 modeltype : 'transphasenet_rising-hope'
 stations : ['ARA0']
 cont_processing : True
