@@ -27,7 +27,9 @@ Due to limited space on GitHub, this example uses a dummy training data set with
 Currently, to train you own model, you must generate your own data. The data structure can be explored by loading
 the dummy training data files. We plan to make a larger dataset available.
 
-The models used in the paper are also too large for GitHub and will be provided here soon:
+Meanwhile, we uploaded parts of the full data (events in the NORSAR catalogue recored at station ARA0 in years 2001--2022) to Zenodo. The models used in the paper are also too large for GitHub and are uploaded there as well. 
+
+All this will be available here soon:
 
 [Zenodo repository](https://www.doi.org/10.5281/zenodo.11231543)
 
