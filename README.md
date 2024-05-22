@@ -10,14 +10,12 @@ Tested setup for installation of required packages  :
 conda create -n test python=3.10.12
 conda activate test
 pip install -r requirements.txt
-
 ```
 
 To train a model for phase detection run :
 
 ```
 python train.py
-
 ```
 
 All training and model parameters can be changed in config.yaml.
@@ -33,12 +31,11 @@ The models used in the paper are also too large for GitHub and will be provided 
 
 [Zenodo repository](10.5281/zenodo.11231543)
 
-To pick arrivals in contineous data of station ARA0 first download the models, store in tf/output/models,
+To pick arrivals in continuous data of station ARA0 first download the models, store tjem in tf/output/models,
 adjust pred_config.yaml, and then run:
 
 ```
 python predict.py
-
 ```
 
 
