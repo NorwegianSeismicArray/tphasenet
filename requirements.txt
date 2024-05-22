@@ -1,7 +1,5 @@
-#  conda create -n tphasenet python=3.10.12
-#  conda activate tphasenet
-tensorflow
+tensorflow==2.12.1
 tqdm
-pandas
 scipy
 omegaconf
+obspy

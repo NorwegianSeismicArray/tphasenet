@@ -1,0 +1,23 @@
+model: 'config.yaml'
+#modelname : 'tf/output/models/saved_model_arces_nores_spits_fines_norsar_helsinki_leb'
+modelname : '/projects/Array/ML_methods/output/models/saved_model_arces_nores_spits_fines_norsar_helsinki_leb'
+modeltype : 'transphasenet_rising-hope'
+stations : ['ARA0']
+cont_processing : True
+start_time : '2023-01-01T00:00:10' # if cont_processing is True
+end_time : '2023-01-01T01:00:10' # if cont_processing is True
+times : ['2020-08-23T03:26:22'] # if cont_processing is False, provide list of Window Start Times or file
+#times : 'times.dat'
+window_offset : 300 # start in seconds before time in times if cont_processing is False
+window_length : 3600 # Length of time period to be processed in one prediction run and to be stacked.
+                     # Results are saved in one output file. Must be longer than prediction window.
+step : 10 # step for sliding window in seconds
+stacking : 'median' # Use 'mean', 'median', 'std' (standard deviation) or 'pc25' (25% percentile fo
+                    # combining window overlap
+output_dir : 'tf/output/'
+save_prob : True # save contineous output propabilities but ont waveforms
+save_waveforms : False # save contineous waveforms and output propabilities
+save_picks : True # save detections above threshold
+p_threshold : 0.6 # propability threshold for P waves. if save_picks is True
+s_threshold : 0.5 # propability threshold for S waves. if save_picks is True
+d_threshold : 0.45 # propability threshold deetctions (EQTransformer). if save_picks is True

@@ -1,20 +1,13 @@
-run:
-  project: 'minem_arraydetect'
-  #project: 'phasedetection'
-  experiment_name: ''
-  outputdir: '/projects/Array/MINEM_ArrayProcessing/TASK1_PhaseDetection/'
-  code_location: '/vcs/andreask/tphasenet'
 data:
-  input_dataset_name: '1statdetect' # dataset name from ML data generator
-  input_datatype: 'single_station_waveforms'
-  inputdir: '/projects/Array/ML_DataSet/data/' # where data are saved
-  #train_years: [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]
-  train_years: [1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]
+  inputdir: './tf/data/' # where data are saved
+  input_dataset_name : 'regional'
+  train_years: [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]
   valid_years: [2021]
   test_years: [2022]
-  #test_years: [2022,2023]
-  sampling_rate : 40 # common waveform sampling rate - see data generation
+  sampling_rate : 40. # common waveform sampling rate used for data generation
   allowed_phases : ['PN', 'PG', 'P', 'SN', 'SG', 'S', 'PB', 'SB','D'] #  phase types to be used as labels
+  lower_frequency : 2.0 # not used in training because data are supposed to be already pre-processed!
+  upper_frequency : 8.0 # not used in training because data are supposed to be already pre-processed!
 training:
   reduce_lr_patience: 9
   early_stopping_patience: 15

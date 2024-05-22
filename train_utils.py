@@ -2,10 +2,9 @@
 
 import tensorflow as tf
 import h5py
-import pandas as pd
 from tqdm import tqdm
 import numpy as np
-from random import shuffle
+from random import shuffle, choices
 from collections import defaultdict
 import random
 import string
@@ -15,15 +14,6 @@ from scipy.signal.windows import tukey, gaussian, triang
 import os
 import glob
 
-test_old = False
-
-
-# this does not use detection thresholds
-# correlates true and predictions and sum.
-# so not sure if this gives meaningful metrics
-# may be still useful for relative model comparsion during training
-# and it seems this is not used for optimazation
-# the loss function is used instead
 def keras_f1(y_true, y_pred):
     
     """ 
@@ -66,13 +56,29 @@ def keras_f1(y_true, y_pred):
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 
-def get_random_string(length):
-    # choose from all lowercase letter
-    letters = string.ascii_lowercase
-    result_str = ''.join(random.choice(letters) for i in range(length))
-    return result_str
-
 def waveform_normalize(X, mode='max', channel_mode='local'):
+    """ 
+    
+    Normalizes waveform data.
+    
+    Parameters
+    ----------
+    X : numpy array
+        waveforms
+        
+    mod : string
+          mode of normalization : 'max' or 'std'
+
+    channel_mode : string
+         'local' or 'global' normalization
+        
+    Returns
+    -------  
+    X / m : numpy array
+        Normalized waveforms
+        
+    """
+
     X -= np.mean(X, axis=0, keepdims=True)
 
     if mode == 'max':
@@ -93,6 +99,27 @@ def waveform_normalize(X, mode='max', channel_mode='local'):
     return X / m
 
 def waveform_crop(x, y, new_length, testing=False):
+    """ 
+    
+    crops waveform data.
+    
+    Parameters
+    ----------
+    x : numpy array
+        waveforms
+    y : numpy array
+        labels
+        
+    new_length : int
+          number of samples to be cropped to 
+
+    Returns
+    -------  
+    x,y : numpy arrays
+        cropped waveforms and labels
+        
+    """
+
     if testing: 
         y1 = len(x)//2 - new_length//2 #consistent for testing
     else:
@@ -102,10 +129,48 @@ def waveform_crop(x, y, new_length, testing=False):
     return x, y
 
 def waveform_drop_channel(x, channel):
+    """ 
+    
+    drops channel from waveform data.
+    
+    Parameters
+    ----------
+    x : numpy array
+        waveforms
+        
+    channel : int
+          channel number to be dropped 
+
+    Returns
+    -------  
+    x : numpy array
+        waveforms with one chnnel set to zero
+        
+    """
+
     x[..., channel] = 0
     return x
 
 def waveform_add_gap(x, max_size):
+    """ 
+    
+    add gap in waveform data.
+    
+    Parameters
+    ----------
+    x : numpy array
+        waveforms
+        
+    max_size : int
+          length of maximum gap to be added
+
+    Returns
+    -------  
+    x : numpy array
+        waveforms with gap
+        
+    """
+
     l = x.shape[0]
     gap_start = np.random.randint(0, int((1 - max_size) * l))
     gap_end = np.random.randint(gap_start, gap_start + int(max_size * l))
@@ -113,27 +178,69 @@ def waveform_add_gap(x, max_size):
     return x
 
 def waveform_add_noise(x, noise):
+    """ 
+    
+    adds noise to waveform data.
+    
+    Parameters
+    ----------
+    x : numpy array
+        waveforms
+        
+    noise : float
+          noise factor 
+
+    Returns
+    -------  
+    x : numpy array
+        waveforms with noise added
+        
+    """
+
     m = x.max(axis=0)
     N = np.random.normal(scale=m * noise, size=x.shape)
     return x + N
 
-def waveform_pre_emphasis(x, pre_emphasis=0.97):
-    return np.stack([np.append(x[0,c], x[1:,c] - pre_emphasis * x[:-1,c]) for c in range(x.shape[1])], axis=-1)
-
 def waveform_taper(x, alpha=0.04):
+    """
+    taper waveforms
+
+    """
     w = tukey(x.shape[0], alpha)
     return x*w[:,np.newaxis]
 
 def label_smoothing(y, f):
+    """
+
+    smooth phase detections labels by convolution with gaussian
+    this adds uncertainty to picked times
+    
+    Parameters
+    ----------
+    y : numpy array
+        labels
+        
+    f : numpy array
+          gaussian controlled by ramp parameter in config file
+
+    Returns
+    -------  
+    y : numpy array
+        smoothed labels
+
+    """
     y = np.asarray([np.convolve(b, f, mode='same') for b in y.T]).T
     m = np.amax(y, axis=0, keepdims=True)
     m[m == 0] = 1
     y /= m
     return np.clip(y, 0.0, 1.0)
 
-from random import choices
-
 class EQDatareader(tf.keras.utils.Sequence):
+    """
+
+    Class for loading data for model training in Keras
+
+    """
     def __init__(self, 
                  files, 
                  augment=False,
@@ -143,7 +250,6 @@ class EQDatareader(tf.keras.utils.Sequence):
                  add_noise=0.0, 
                  add_event=0.0,
                  drop_channel=0.0,
-                 pre_emphasis=0.0,
                  add_gap=0.0,
                  max_gap_size=0.0,
                  norm_mode='max',
@@ -163,7 +269,6 @@ class EQDatareader(tf.keras.utils.Sequence):
         self.add_noise = add_noise
         self.drop_channel = drop_channel
         self.add_event = add_event
-        self.pre_emphasis = pre_emphasis
         self.add_gap = add_gap
         self.norm_mode = norm_mode
         self.norm_channel_mode = norm_channel_mode
@@ -179,74 +284,38 @@ class EQDatareader(tf.keras.utils.Sequence):
         self.data = []
 
         if self.file_buffer < 0:
-            if not self.include_noise:
-                for file,file_labels in tqdm(zip(self.files[0],self.files[1]),total=len(self.files[0])):
-                    self._load_file([file,file_labels,None])
-            else :
-                for file,file_labels in tqdm(zip(self.files[0],self.files[1],self.files[2]),total=len(self.files[0])):
-                    self._load_file([file,file_labels,file_noise])
+            for file in tqdm(self.files,total=len(self.files)):
+                    self._load_file(file)
         print('Number of samples:', len(self.data))
         self.on_epoch_end()
 
-    def _label_decoder(self,lab,w,x,y):
-        prob = np.zeros((w,x,y))
-        lab_dict = defaultdict(list)
-        for l in lab:
-            lab_dict[l[0]].append(l)
-        for i in range(w) :
-            for l in lab_dict[i] :
-                prob[i,l[1]:l[2]+1,l[3]] = 1.
-        return prob
-
-
     def _load_file(self, filename):
-        with h5py.File(filename[0]) as f:
+        with h5py.File(filename) as f:
             x = f['X'][:]
-            if not test_old : ids = f['event_id'][:]
-            else :
-                ids = [None]*len(x)
-                event_type = f['event_type'][:]
-        with h5py.File(filename[1]) as f:
-            if not test_old :
-                labels = f['labels'][:]
-                ids2 = f['event_id'][:]
-            else :
-                labels = f['label'][:]
-                ids2 = [None]*len(labels)
+            ids = [None]*len(x)
+            event_type = f['event_type'][:]
+            labels = f['label'][:]
 
-        if not np.array_equal(ids,ids2) :
+        keep_dummy_data_for_github = False
+        if keep_dummy_data_for_github :
+          with h5py.File(filename.split('/')[-1], 'w') as f:
+            f.create_dataset('X', data=x[:1], dtype='float32')
+            f.create_dataset('event_type', data=event_type[:1])
+            f.create_dataset('label', data=labels[:1])
+
+        if len(x) != len(labels) :
             print(f"Data and labels are not equal {len(ids)} {len(ids2)}")
             exit()
-        if not test_old :
-            num_labels = np.max(np.transpose(labels)[3])
-            labels = self._label_decoder(labels,len(x),len(x[0]),num_labels+1)
-        counter = 0
-        for _id, waveform, label in zip(ids, x, labels ):
-        #for _id, waveform, label, et in zip(ids, x, labels, event_type):
-            if test_old : et = et.decode("utf-8")
-            else : et = 'event'
-            if et == 'noise' : continue
-            if self.ramp > 0 :
+        for _id, waveform, label, et in zip(ids, x, labels, event_type):
+            et = et.decode("utf-8")
+            if self.ramp > 0 and et != 'noise' :
                 label = label_smoothing(label, self.f)
-            self.data.append({'x':waveform.astype(np.float32), 
+            if (et == 'noise' and self.include_noise) or et != 'noise':
+                self.data.append({'x':waveform.astype(np.float32), 
                               'y':label.astype(np.float32), 
                               'metadata': None, 
                               'event_id': _id,
                               'et':et})
-            counter += 1
-        #print("Data read:",counter,filename[0],len(self.data))
-        if self.include_noise:
-            with h5py.File(filename[2]) as f:
-                x = f['X'][:]
-            for waveform in x:
-                label = np.zeros(x.shape)
-                et = 'noise'
-                self.data.append({'x':waveform.astype(np.float32),
-                              'y':label.astype(np.float32),
-                              'metadata': None,
-                              'event_id': None,
-                              'et':et})
-
             
     def on_epoch_end(self):
         if self.file_buffer > 0:
@@ -304,8 +373,6 @@ class EQDatareader(tf.keras.utils.Sequence):
                     x = waveform_add_noise(x, np.random.uniform(0.01,0.15))
                 if np.random.random() < self.drop_channel:
                     x = waveform_drop_channel(x, np.random.choice(np.arange(x.shape[1])))
-                if np.random.random() < self.pre_emphasis:
-                    x = waveform_pre_emphasis(x, self.pre_emphasis)
                 if np.random.random() < self.add_gap:
                     x = waveform_add_gap(x, self.max_gap_size)
         
@@ -595,7 +662,7 @@ class CategoricalFocalCrossentropy(tf.keras.losses.Loss):
         return loss
         
         
-def create_data_generator(files, csvs, config, training=True):
+def create_data_generator(files, config, training=True):
     if 'eqt' in config.model.type :
         include_noise = True
         phasenet = False
@@ -631,32 +698,12 @@ def create_data_generator(files, csvs, config, training=True):
                          class_weights=config.training.class_weights,
                          phasenet=phasenet),nchannels
 
-def get_data_files_new(indir, years, config ):
-    datatype = config.data.input_datatype
-    dataset = config.data.input_dataset_name
-    training_files = [indir + f'{dataset}_{y}_{datatype}.hdf5' for y in years]
-    if test_old :
-        training_files=[]
-        for y in years :
-            training_files.extend(glob.glob(f'tf/data/traindata_center_only_{y}_*.hdf5'))
+def get_data_files(indir, years, config ):
+    training_files=[]
+    for y in years :
+        training_files.extend(glob.glob(f'{indir}/traindata_center_only_{y}_*.hdf5'))
     training_files = list(filter(os.path.exists, training_files))
-    tmp = 'labels_phase_detection'
-    training_files_labels = [indir + f'{dataset}_{y}_{tmp}.hdf5' for y in years]
-    training_files_labels = list(filter(os.path.exists, training_files_labels))
-    if test_old : training_files_labels = training_files
-
-    if 'eqt' in config.model.type :
-        tmp = datatype+'_noise'
-        training_files_noise = [indir + f'{dataset}_{y}_{tmp}.hdf5' for y in years]
-        training_files_noise = list(filter(os.path.exists, training_files_noise))
-    else : training_files_noise = None
-
-    if len(training_files) != len(training_files_labels) :
-        print("Different number of data and label files!")
-        exit()
-    # add for MINEM version - keep out here
-    #meta_data_files_csv = list(filter(os.path.exists, map(lambda f: f.replace('hdf5', 'csv'), training_files)))
-    return [training_files,training_files_labels,training_files_noise]
+    return training_files
 
     
 def get_model(config,nchannels):

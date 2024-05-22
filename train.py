@@ -11,7 +11,7 @@ from omegaconf import OmegaConf
 from setup_config import add_root_paths,get_config_dir,dict_to_namespace
 from train_utils import CustomStopper
 from tensorflow.keras import mixed_precision
-from train_utils import get_data_files_new, create_data_generator, get_model, get_predictions
+from train_utils import get_data_files, create_data_generator, get_model, get_predictions
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -34,31 +34,23 @@ print('Config read.')
 policy = mixed_precision.Policy('mixed_float16')
 mixed_precision.set_global_policy(policy)
 
-GPU = len(tf.config.list_physical_devices('GPU')) > 0
-
 #DATA LOCATION 
 if gpus:
     inputdir = 'tf/data/'
 else :
-    #inputdir = '/projects/Array/ML_methods/waveform_data/'
     inputdir = cfg.data.inputdir
 
 training_years = cfg.data.train_years
 testing_years = cfg.data.test_years
 validation_years = cfg.data.valid_years
 
-training_files = get_data_files_new(inputdir, training_years, cfg)
-validation_files = get_data_files_new(inputdir, validation_years, cfg)
-testing_files = get_data_files_new(inputdir, testing_years, cfg )
+training_files = get_data_files(inputdir, training_years, cfg)
+validation_files = get_data_files(inputdir, validation_years, cfg)
+testing_files = get_data_files(inputdir, testing_years, cfg )
 
-train_dataset,_ = create_data_generator(training_files, [], cfg, training=True)
-valid_dataset,_ = create_data_generator(validation_files, [], cfg, training=True)
-test_dataset,nchannels = create_data_generator(testing_files, [], cfg, training=False)
-
-#DEFINING LOGSDIR
-from datetime import datetime
-datetimestr = datetime.now().strftime('%Y%m%d-%H%M%S')
-logs = 'tf/logs/' + datetimestr
+train_dataset,_ = create_data_generator(training_files, cfg, training=True)
+valid_dataset,_ = create_data_generator(validation_files, cfg, training=True)
+test_dataset,nchannels = create_data_generator(testing_files, cfg, training=False)
 
 model_type = cfg.model.type
 dataset = cfg.data.input_dataset_name
