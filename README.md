@@ -1,10 +1,8 @@
 <a name="readme-top"></a>
 
-# TPhaseNet: regional phase picking
+# TPhaseNet: Phase picking for regional seismic data
 
 Code related to the submitted paper **Deep learning models for regional phase detection on seismic stations in Northern Europe and the European Arctic**.
-
-This code will be added and updated gradually.
 
 Tested setup for installation of required packages  :
 
