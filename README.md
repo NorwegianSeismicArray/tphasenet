@@ -25,15 +25,15 @@ To train on gpu you have to adapt the call of train.py for example using docker.
 
 Due to limited space on GitHub, this example uses a dummy training data set with only a few events (tf/data).
 Currently, to train you own model, you must generate your own data. The data structure can be explored by loading
-the dummy training data files. We plan to make a larger dataset available.
+the dummy training data files.
 
-Meanwhile, we uploaded parts of the full data (events in the NORSAR catalogue recored at station ARA0 in years 2001--2022) to Zenodo. The models used in the paper are also too large for GitHub and are uploaded there as well. 
+We have uploaded parts of the full data (events in the NORSAR catalogue recorded at station ARA0 in years 2001--2022) to Zenodo. The models used in the paper are also too large for GitHub and are uploaded to Zenodo as well. 
 
-All this will be available here soon:
+Data and model are available here soon:
 
 [Zenodo repository](https://www.doi.org/10.5281/zenodo.11231543)
 
-To pick arrivals in continuous data of station ARA0 first download the models, store tjem in tf/output/models,
+To pick arrivals in continuous data of station ARA0 first download the models, store them in tf/output/models,
 adjust pred_config.yaml, and then run:
 
 ```
