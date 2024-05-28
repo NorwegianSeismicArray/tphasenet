@@ -29,7 +29,7 @@ the dummy training data files.
 
 We have uploaded parts of the full data (events in the NORSAR catalogue recorded at station ARA0 in years 2001--2022) to Zenodo. The models used in the paper are also too large for GitHub and are uploaded to Zenodo as well. 
 
-Data and model are available here soon:
+Data and model are available here:
 
 [Zenodo repository](https://www.doi.org/10.5281/zenodo.11231543)
 
